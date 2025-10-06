@@ -1,0 +1,36 @@
+version: "3.9"
+
+networks:
+  appnet:
+
+services:
+  waf:
+    build: ./waf-nginx-crs
+    image: example/waf-nginx-crs:latest
+    container_name: waf-nginx-crs
+    restart: unless-stopped
+    environment:
+      # Back-end origin that the WAF will reverse proxy to
+      BACKEND: http://web-server:3000
+      SERVER_NAME: localhost
+      PORT: 8080
+      BLOCKING_PARANOIA: "2"
+      # Log in JSON for easy parsing
+      MODSEC_AUDIT_LOG_FORMAT: JSON
+      MODSEC_AUDIT_ENGINE: RelevantOnly
+    ports:
+      - "8080:8080"
+    depends_on:
+      - web-server
+    networks:
+      - appnet
+
+  web-server:
+    build: ./web-server
+    image: example/simple-web:latest
+    container_name: web-server
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      - appnet

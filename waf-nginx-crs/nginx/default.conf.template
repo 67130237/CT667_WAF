@@ -1,0 +1,23 @@
+# Rendered by CRS image using env vars like $PORT, $SERVER_NAME, $BACKEND
+server {
+    listen       ${PORT};
+    server_name  ${SERVER_NAME};
+
+    # Health check endpoint provided by the base image
+    location = /healthz {
+        return 200 "ok\n";
+    }
+
+    # Enable ModSecurity (already enabled by the CRS image globally)
+    # This template shows where we could toggle or add location-specific overrides.
+    modsecurity on;
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass ${BACKEND};
+    }
+}

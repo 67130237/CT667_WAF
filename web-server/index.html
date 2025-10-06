@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>🧱 WAF Playground – API Echo & Login Test</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f9fafb;
+      --card-bg: #fff;
+      --radius: 12px;
+      --shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      --font: "Segoe UI", system-ui, sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: #333;
+      margin: 2rem auto;
+      max-width: 800px;
+      line-height: 1.6;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      color: var(--primary);
+      margin-bottom: 0.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .example {
+      background: #eef2ff;
+      border-radius: 6px;
+      padding: 0.25rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      border: 1px solid #c7d2fe;
+      transition: all 0.2s ease;
+    }
+    .example:hover {
+      background: #e0e7ff;
+    }
+    label {
+      font-weight: 500;
+      display: block;
+      margin-top: 1rem;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 0.25rem;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    pre {
+      background: #f3f4f6;
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin-top: 1rem;
+      white-space: pre-wrap;
+      font-family: "JetBrains Mono", monospace;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧱 WAF Playground</h1>
+    <p>ทดสอบการป้องกัน WAF (Web Application Firewall) ผ่าน API `/search`</p>
+  </header>
+
+  <!-- SEARCH -->
+  <div class="card">
+    <h2>🔍 GET /search</h2>
+    <p>ทดสอบ Query Injection / XSS / SQLi – ระบบจะ echo query กลับโดยไม่ sanitize เพื่อให้ดูว่า WAF block หรือไม่</p>
+    <label>Search query (q):</label>
+    <input id="searchQuery" placeholder="ใส่ payload ที่ต้องการทดสอบ..." />
+    <div class="examples">
+      <span class="example" onclick="useExample('search', 'apple')">apple</span>
+      <span class="example" onclick="useExample('search', '<script>alert(1)</script>')">&lt;script&gt;alert(1)&lt;/script&gt;</span>
+      <span class="example" onclick="useExample('search', 'OR 1=1 --')">OR 1=1 --</span>
+      <span class="example" onclick="useExample('search', '../etc/passwd')">../etc/passwd</span>
+      <!-- <span class="example" onclick="useExample('search', '{"$ne":null}')">{"$ne":null}</span> -->
+    </div>
+    <button onclick="callSearch()">เรียก /search</button>
+    <pre id="searchOutput"></pre>
+  </div>
+
+
+  <script>
+    // ✅ ใช้งานง่าย: click ตัวอย่างเพื่อกรอกอัตโนมัติ
+    function useExample(type, val) {
+      if (type === 'search') {
+        document.getElementById('searchQuery').value = val;
+      } else if (type === 'login') {
+        document.getElementById('username').value = val.u;
+        document.getElementById('password').value = val.p;
+      }
+    }
+
+    // 🔍 Search API
+    async function callSearch() {
+      const q = document.getElementById('searchQuery').value;
+      const output = document.getElementById('searchOutput');
+      output.textContent = '⏳ กำลังส่งคำขอ...';
+      try {
+        const start = performance.now();
+        const res = await fetch(`/search?q=${encodeURIComponent(q)}`);
+        const end = performance.now();
+        const text = await res.text();
+        output.textContent = `⏱ ${(end - start).toFixed(1)} ms\n\n` + text;
+      } catch (e) {
+        output.textContent = '❌ Error: ' + e;
+      }
+    }
+  </script>
+</body>
+</html>
